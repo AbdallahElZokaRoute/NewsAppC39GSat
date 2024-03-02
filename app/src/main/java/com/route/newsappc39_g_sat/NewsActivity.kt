@@ -34,10 +34,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.route.newsappc39_g_sat.api.APIManager
+import com.route.newsappc39_g_sat.fragments.CategoriesFragment
+import com.route.newsappc39_g_sat.fragments.NewsFragment
 import com.route.newsappc39_g_sat.model.ArticlesItem
 import com.route.newsappc39_g_sat.model.ArticlesResponse
+import com.route.newsappc39_g_sat.model.CategoriesFragment
 import com.route.newsappc39_g_sat.model.Constants
+import com.route.newsappc39_g_sat.model.NewsFragment
 import com.route.newsappc39_g_sat.ui.theme.NewsAppC39GSatTheme
 import com.route.newsappc39_g_sat.ui.theme.green
 import com.route.newsappc39_g_sat.utils.NewsDrawerSheet
@@ -60,14 +69,31 @@ class NewsActivity : ComponentActivity() {
     }
 }
 
+// Categories Fragment + Logging Interceptor
+// MVVM + DataBinding
+// Model-View-ViewModel
 @Composable
 fun NewsScreen() {
     // Scaffold == Coordinator Layout
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val navController = rememberNavController()
     ModalNavigationDrawer(drawerContent = {
         // Drawer Sheet
-        NewsDrawerSheet()
+        NewsDrawerSheet(onSettingsClickListener = {
+            // navigate to Settings   + Close Drawer
+        }, onCategoriesClickListener = {
+            // Navigate to categories
+            // Close drawer
+            navController.popBackStack() // clear backstack
+            if (navController.currentDestination?.route != CategoriesFragment.route) {
+                navController.navigate(CategoriesFragment.route)
+            }
+
+            scope.launch {
+                drawerState.close()
+            }
+        })
     }, drawerState = drawerState) {
 
         Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
@@ -80,8 +106,11 @@ fun NewsScreen() {
             }
         }
         ) { paddingValues ->
-            NewsFragment(
-                Modifier
+
+            NavHost(
+                navController = navController,
+                startDestination = CategoriesFragment.route,
+                modifier = Modifier
                     .paint(
                         painter = painterResource(id = R.drawable.pattern),
                         contentScale = ContentScale.Crop
@@ -89,7 +118,20 @@ fun NewsScreen() {
                     .padding(
                         top = paddingValues.calculateTopPadding()
                     )
-            )
+            ) {
+                composable(CategoriesFragment.route) {
+                    CategoriesFragment(navController)
+                }
+                composable(
+                    "${NewsFragment.route}/{category_id}",
+                    arguments = listOf(navArgument("category_id") {
+                        type = NavType.StringType
+                    })
+                ) { navBackStackEntry ->
+                    val category = navBackStackEntry.arguments?.getString("category_id")
+                    NewsFragment(categoryId = category ?: "")
+                }
+            }
         }
     }
 }
@@ -100,40 +142,7 @@ fun NewsScreenPreview() {
     NewsScreen()
 }
 
-@Composable
-fun NewsFragment(modifier: Modifier = Modifier) {
-    val articlesList = remember {
-        mutableStateListOf<ArticlesItem>()
-    }
-    Column(modifier = modifier.fillMaxSize()) {
-        NewsSourcesTabRow { tabSelectedId ->
-            articlesList.clear()
-            APIManager
-                .getNewsServices()
-                .getNewsArticles(Constants.API_KEY, tabSelectedId)
-                .enqueue(object : Callback<ArticlesResponse> {
-                    override fun onResponse(
-                        call: Call<ArticlesResponse>,
-                        response: Response<ArticlesResponse>
-                    ) {
-                        if (response.body()?.articles?.isNotEmpty() == true)
-                            articlesList.addAll(response.body()?.articles!!)
-                    }
 
-                    override fun onFailure(call: Call<ArticlesResponse>, t: Throwable) {
-                        TODO("Not yet implemented")
-                    }
-                })
-        }
-        NewsList(articlesList.toList())
-    }
-}
-
-@Preview(showSystemUi = true, showBackground = true)
-@Composable
-fun NewsFragmentPreview() {
-    NewsFragment()
-}
 // Client - Server Communication
 
 // Client <->  Server

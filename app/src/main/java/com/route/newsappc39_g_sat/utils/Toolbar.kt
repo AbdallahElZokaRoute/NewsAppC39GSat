@@ -24,7 +24,9 @@ import com.route.newsappc39_g_sat.ui.theme.green
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsTopAppBar(onNavigationClick: () -> Unit) {
+fun NewsTopAppBar(
+    onNavigationClick: () -> Unit
+) {
     TopAppBar(
         title = {
             Text(

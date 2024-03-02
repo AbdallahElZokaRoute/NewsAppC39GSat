@@ -28,7 +28,7 @@ import retrofit2.Response
 
 
 @Composable
-fun NewsSourcesTabRow(onTabSelected: (String) -> Unit) {
+fun NewsSourcesTabRow(categoryId: String, onTabSelected: (String) -> Unit) {
     val context = LocalContext.current
     val selectedTabIndex = remember {
         mutableIntStateOf(0)
@@ -39,7 +39,7 @@ fun NewsSourcesTabRow(onTabSelected: (String) -> Unit) {
     LaunchedEffect(Unit) {
         APIManager
             .getNewsServices()
-            .getNewsSources(Constants.API_KEY, "sports")
+            .getNewsSources(Constants.API_KEY, categoryId)
             .enqueue(object : Callback<SourcesResponse> {
                 override fun onResponse(
                     call: Call<SourcesResponse>,
@@ -58,6 +58,11 @@ fun NewsSourcesTabRow(onTabSelected: (String) -> Unit) {
             })// Background Thread ->
 //            .execute() // Main Thread ->
     }
+    LaunchedEffect(Unit) {
+        if (sourcesList.isNotEmpty()) {
+            onTabSelected(sourcesList.get(0).id ?: "")
+        }
+    }
     ScrollableTabRow(
         selectedTabIndex = selectedTabIndex.intValue,
         edgePadding = 16.dp,
@@ -65,16 +70,13 @@ fun NewsSourcesTabRow(onTabSelected: (String) -> Unit) {
         divider = {}) {
 
         sourcesList.forEachIndexed { index, item ->
-            LaunchedEffect(Unit) {
-                if (selectedTabIndex.intValue == 0) {
-                    onTabSelected(item.id ?: "")
-                }
-            }
             Tab(
                 selected = index == selectedTabIndex.intValue,
                 onClick = {
-                    selectedTabIndex.intValue = index
-                    onTabSelected(item.id ?: "")
+                    if (selectedTabIndex.intValue != index) {
+                        selectedTabIndex.intValue = index
+                        onTabSelected(item.id ?: "")
+                    }
                 },
                 selectedContentColor = Color.White,
                 unselectedContentColor = green

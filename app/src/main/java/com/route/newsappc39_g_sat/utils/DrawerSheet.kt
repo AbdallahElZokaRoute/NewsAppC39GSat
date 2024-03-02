@@ -2,6 +2,7 @@ package com.route.newsappc39_g_sat.utils
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +26,7 @@ import com.route.newsappc39_g_sat.R
 import com.route.newsappc39_g_sat.ui.theme.green
 
 @Composable
-fun NewsDrawerSheet() {
+fun NewsDrawerSheet(onSettingsClickListener: () -> Unit, onCategoriesClickListener: () -> Unit) {
     ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.7F), drawerContainerColor = Color.White) {
         Column(
             modifier = Modifier
@@ -45,23 +46,33 @@ fun NewsDrawerSheet() {
         DrawerItem(
             iconResId = R.drawable.ic_categories,
             text = stringResource(id = R.string.categories)
-        )
+        ) {
+            onCategoriesClickListener()
+        }
         DrawerItem(
             iconResId = R.drawable.ic_settings,
             text = stringResource(id = R.string.settings)
-        )
+        ) {
+            onSettingsClickListener()
+        }
     }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun NewsDrawerSheetPreview() {
-    NewsDrawerSheet()
+    NewsDrawerSheet(onSettingsClickListener = {}, onCategoriesClickListener = {})
 }
 
 @Composable
-fun DrawerItem(iconResId: Int, text: String) {
-    Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+fun DrawerItem(iconResId: Int, text: String, onClickListener: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(10.dp)
+            .clickable {
+                onClickListener()
+            }, verticalAlignment = Alignment.CenterVertically
+    ) {
         Image(
             painter = painterResource(id = iconResId),
             contentDescription = stringResource(R.string.navigation_drawer_item)
@@ -74,5 +85,7 @@ fun DrawerItem(iconResId: Int, text: String) {
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun DrawerItemPreview() {
-    DrawerItem(iconResId = R.drawable.ic_categories, text = stringResource(R.string.categories))
+    DrawerItem(iconResId = R.drawable.ic_categories, text = stringResource(R.string.categories)) {
+
+    }
 }
