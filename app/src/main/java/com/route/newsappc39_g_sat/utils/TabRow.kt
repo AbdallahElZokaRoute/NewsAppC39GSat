@@ -17,10 +17,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.route.newsappc39_g_sat.api.APIManager
 import com.route.newsappc39_g_sat.model.Constants
 import com.route.newsappc39_g_sat.model.SourcesItem
 import com.route.newsappc39_g_sat.model.SourcesResponse
+import com.route.newsappc39_g_sat.news.NewsViewModel
 import com.route.newsappc39_g_sat.ui.theme.green
 import retrofit2.Call
 import retrofit2.Callback
@@ -28,53 +30,35 @@ import retrofit2.Response
 
 
 @Composable
-fun NewsSourcesTabRow(categoryId: String, onTabSelected: (String) -> Unit) {
-    val context = LocalContext.current
-    val selectedTabIndex = remember {
-        mutableIntStateOf(0)
-    }
-    val sourcesList = remember {
-        mutableStateListOf<SourcesItem>()
-    }
+fun NewsSourcesTabRow(
+    categoryId: String,
+    viewModel: NewsViewModel = viewModel(),
+    onTabSelected: (String) -> Unit
+) {
+
     LaunchedEffect(Unit) {
-        APIManager
-            .getNewsServices()
-            .getNewsSources(Constants.API_KEY, categoryId)
-            .enqueue(object : Callback<SourcesResponse> {
-                override fun onResponse(
-                    call: Call<SourcesResponse>,
-                    response: Response<SourcesResponse>
-                ) {
-                    if (response.body()?.sources?.isNotEmpty() == true)
-                        sourcesList.addAll(response.body()?.sources!!)
-
-                }
-
-                override fun onFailure(call: Call<SourcesResponse>, t: Throwable) {
-
-                }
-
-
-            })// Background Thread ->
+        viewModel.getNewsSources(categoryId)
+        // Background Thread ->
 //            .execute() // Main Thread ->
     }
-    LaunchedEffect(Unit) {
-        if (sourcesList.isNotEmpty()) {
-            onTabSelected(sourcesList.get(0).id ?: "")
-        }
-    }
+
     ScrollableTabRow(
-        selectedTabIndex = selectedTabIndex.intValue,
+        selectedTabIndex = viewModel.selectedTabIndex.intValue,
         edgePadding = 16.dp,
         indicator = {},
         divider = {}) {
 
-        sourcesList.forEachIndexed { index, item ->
+        viewModel.sourcesList.forEachIndexed { index, item ->
+            LaunchedEffect(Unit) {
+                if (viewModel.sourcesList.isNotEmpty()) {
+                    onTabSelected(viewModel.sourcesList.get(0).id ?: "")
+                }
+            }
             Tab(
-                selected = index == selectedTabIndex.intValue,
+                selected = index == viewModel.selectedTabIndex.intValue,
                 onClick = {
-                    if (selectedTabIndex.intValue != index) {
-                        selectedTabIndex.intValue = index
+                    if (viewModel.selectedTabIndex.intValue != index) {
+                        viewModel.selectedTabIndex.intValue = index
                         onTabSelected(item.id ?: "")
                     }
                 },
@@ -84,7 +68,7 @@ fun NewsSourcesTabRow(categoryId: String, onTabSelected: (String) -> Unit) {
                 Text(
                     text = item.name ?: "",
                     fontSize = 14.sp,
-                    modifier = if (selectedTabIndex.intValue == index)
+                    modifier = if (viewModel.selectedTabIndex.intValue == index)
                         Modifier
                             .padding(vertical = 8.dp, horizontal = 4.dp)
                             .background(green, CircleShape)
